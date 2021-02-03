@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+# Ignore where I like to put my compiler output.
+bin/
