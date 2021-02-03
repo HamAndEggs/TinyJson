@@ -79,62 +79,42 @@ private:
         // Search for the start of the object.
         if( FindNextControlChar(pJson,'{') )
         {
-            pJson++;// Skip object start char
             do
             {
-                // Look for string start.
-                if( FindNextControlChar(pJson,'\"') )
-                {// The increment one is because the find stops at the char we'll looking for.
-                    pJson++;// Skip the "
-                    const char* stringStart = pJson;
-                    // Look for string end.
-                    if( FindNextControlChar(pJson,'\"') )
+                pJson++;// Skip object start char or comma for more key value pairs.
+                const std::string objKey = ReadString(pJson);
+                // Now parse it's value.
+                if( FindNextControlChar(pJson,':') )
+                {
+                    pJson++;
+                    JsonValuePtr newValue = MakeValue(pJson);
+                    if( newValue != nullptr )
                     {
-                        pJson++;// Skip the "
-                        const char* stringEnd = pJson;
-                        const std::string objKey(stringStart,stringEnd-stringStart);
-
-                        // Now parse it's value.
-                        if( FindNextControlChar(pJson,':') )
+                        rObject.emplace_back(objKey,newValue);
+                        // Now see if there are more key valuer pairs to add to the object or if we're done.
+                        // Skip white space, then see if next char is a } (for end of object) or a , for more key value pairs.
+                        // We leave the pointer there and drop out the function.
+                        // Down to the caller to test if they carry on or finish the current object.
+                        if( SkipWhiteSpace(pJson) )
                         {
-                            JsonValuePtr newValue = MakeValue(pJson);
-                            if( newValue != nullptr )
+                            if( *pJson != '}' && *pJson != ',' )
                             {
-                                rObject.emplace_back(objKey,newValue);
-                                // Now see if there are more key valuer pairs to add to the object or if we're done.
-                                // Skip white space, then see if next char is a } (for end of object) or a , for more key value pairs.
-                                // We leave the pointer there and drop out the function.
-                                // Down to the caller to test if they carry on or finish the current object.
-                                if( SkipWhiteSpace(pJson) )
-                                {
-                                    if( *pJson != '}' && *pJson == ',' )
-                                    {
-                                        throw std::runtime_error("Json format error detected, did you forget a comma between key value pairs? For key " + objKey);
-                                    }
-                                }
-                                else
-                                {
-                                    throw std::runtime_error("Abrupt end to json string detected for key " + objKey);
-                                }
-                            }
-                            else
-                            {
-                                throw std::runtime_error("Json format error detected, value unreadable for key " + objKey);
+                                throw std::runtime_error("Json format error detected, did you forget a comma between key value pairs? For key " + objKey);
                             }
                         }
                         else
                         {
-                            throw std::runtime_error("Json format error detected, seperator character ':' not found for key " + objKey);
+                            throw std::runtime_error("Abrupt end to json string detected for key " + objKey);
                         }
                     }
                     else
                     {
-                        throw std::runtime_error("Json format error detected, string key name not terminated with a quote");
+                        throw std::runtime_error("Json format error detected, value unreadable for key " + objKey);
                     }
                 }
                 else
                 {
-                    throw std::runtime_error("Json format error detected, expected start of string key name, did you forget to put the key name in quotes?");
+                    throw std::runtime_error("Json format error detected, seperator character ':' not found for key " + objKey);
                 }
             }while (*pJson == ',');
 
@@ -180,25 +160,17 @@ private:
                 }while(',');
 
                 // Check we did get to the end.
-                if( *pJson == ']' )
-                {
-                    pJson++;
-                }
-                else
+                if( *pJson != ']' )
                 {
                     throw std::runtime_error("Json format error detected, array not terminated with ']'");
                 }
-                break;
-
+                pJson++;
+                return newValue;
+    
             case '\"':
-                valueStart++; // Skip "
-                if( FindNextControlChar(pJson,'\"') )
-                {
-                    newValue->mType = JTYPE_STRING;
-                    newValue->mValue.assign(valueStart,pJson-valueStart);
-                    return newValue;
-                }
-                break;
+                newValue->mType = JTYPE_STRING;
+                newValue->mValue = ReadString(pJson);
+                return newValue;
 
             case 'T':
             case 't':
@@ -271,6 +243,7 @@ private:
 
     bool FindNextControlChar(const char* &pJson,char pToFind)const
     {
+//        std::cout << "FindNextControlChar " << pJson << '\n';
         // Stop looking when we get to the end of the json.
         while( *pJson != 0 )
         {
@@ -294,6 +267,8 @@ private:
 
     bool SkipWhiteSpace(const char* &pJson)const
     {
+//        std::cout << "SkipWhiteSpace " << pJson << '\n';
+
         while( *pJson != 0 )
         {// As per Json spec, look for characters that are not a space, linefeed, carrage return or horizontal tab. isspace does this.
             if( isspace(*pJson) == 0 )
@@ -303,6 +278,38 @@ private:
             pJson++;
         }
         return false;
+    }
+
+    std::string ReadString(const char* &pJson)const
+    {
+//        std::cout << "ReadString " << pJson << '\n';
+        // First find the start of the string
+        if( FindNextControlChar(pJson,'\"') )
+        {
+            pJson++; // Skip "
+            const char* stringStart = pJson;
+            // Now scan till we hit the next "
+            while( *pJson != '\"' )
+            {
+            // Did we hit the end?
+                if( *pJson == 0 )
+                {
+                    throw std::runtime_error("Abrupt end to json whilst reading string");
+                }
+                pJson++;
+            }
+            const size_t len = pJson - stringStart;
+            pJson++; // Skip "
+            if( len > 0 )
+            {
+                return std::string(stringStart,len);
+            }
+            // Empty string valid.
+            return "";
+        }
+
+        throw std::runtime_error("Json format error detected, expected start of string, did you forget to put the string in quotes?");
+        // Should never get here, no return needed.
     }
 
     bool FindEndOfNumber(const char* &pJson)const

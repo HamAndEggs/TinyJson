@@ -13,9 +13,15 @@ int main(int argc, char *argv[])
     std::cout << "Build date " << APP_BUILD_DATE << '\n';
     std::cout << "Build time " << APP_BUILD_TIME << '\n';
 
-    const char* test1Json = R"({"Hello World":"TheWorld"})";
+    const char* test1Json = R"({"Hello World":"TheWorld","empty string":""})";
 
     tinyjson::JsonProcessor test1(test1Json);
+
+    for( auto kv : test1.mRoot )
+    {
+        std::cout << kv.first << " : " <<  kv.second->mValue << '\n';
+    }
+
 
 // And quit\n";
     return EXIT_SUCCESS;
