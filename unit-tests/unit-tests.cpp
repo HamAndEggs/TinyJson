@@ -29,9 +29,11 @@ int main(int argc, char *argv[])
     std::cout << test2["Level1"]["Level2"]["Level3"].GetString() << '\n';
     std::cout << test2["Level1"]["Level2"]["Level3Number"].GetInt() << '\n';
 
+
 // Now test a big weather json file.
     std::cout << "Running test, big complex json\n";
-    tinyjson::JsonProcessor weatherBigTest(weatherBigTestJson);
+    tinyjson::JsonProcessor weatherData(weatherBigTestJson);
+    std::cout << weatherData["current"]["weather"][0]["main"].GetString() << '\n';
 
 // And quit";
     std::cout << "All tests passed!\n";
