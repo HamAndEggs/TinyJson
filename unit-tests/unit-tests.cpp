@@ -20,14 +20,14 @@ int main(int argc, char *argv[])
     const char* test1Json = R"({"Hello World":"TheWorld","empty string test":""})";
     std::cout << "Running test, simple json string\n";
     tinyjson::JsonProcessor test1(test1Json);
-    std::cout << test1.mRoot["Hello World"].mValue << '\n';
+    std::cout << test1["Hello World"].mValue << '\n';
 
 // Simple object tree
     const char* test2Json = R"({"Level1":{"Level2":{"Level3":"It worked!","Level3Number":12}}})";
     std::cout << "Running test, simple object tree\n";
     tinyjson::JsonProcessor test2(test2Json);
-    std::cout << test2.mRoot["Level1"]["Level2"]["Level3"].GetString() << '\n';
-    std::cout << test2.mRoot["Level1"]["Level2"]["Level3Number"].GetInt() << '\n';
+    std::cout << test2["Level1"]["Level2"]["Level3"].GetString() << '\n';
+    std::cout << test2["Level1"]["Level2"]["Level3Number"].GetInt() << '\n';
 
 // Now test a big weather json file.
     std::cout << "Running test, big complex json\n";

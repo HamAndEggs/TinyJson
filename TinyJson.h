@@ -120,11 +120,18 @@ struct JsonProcessor
         }
     }
 
-    JsonObject mRoot;
+    const JsonValue& operator [](const std::string& pKey)const
+    {
+        const auto found = mRoot.find(pKey);
+        if( found != mRoot.end() )
+            return found->second;
+        throw std::runtime_error("Json value for key " + pKey + " not found in root object");
+    }
 
 private:
     const char* mJson;
     const char* const mJsonEnd;
+    JsonObject mRoot;
 
     void AssertMoreData(const char* pErrorString)
     {
