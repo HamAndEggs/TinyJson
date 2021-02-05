@@ -90,6 +90,25 @@ struct JsonValue
         return mArray[pIndex];
     }
 
+    bool GetHasKeyValue(const std::string& pKey)const
+    {
+        if( mType == JTYPE_OBJECT )
+        {
+            const auto found = mObject.find(pKey);
+            if( found != mObject.end() )
+                return true;
+        }
+
+        return false;
+    }
+
+    size_t GetArraySize()const
+    {
+        if( mType == JTYPE_ARRAY )
+            return mArray.size();
+        return 0;
+    }
+
     const std::string& GetString()const
     {
         assert( mType == JTYPE_STRING );
@@ -196,6 +215,18 @@ public:
         if( found != mRoot.mObject.end() )
             return found->second;
         throw std::runtime_error("Json value for key " + pKey + " not found in root object");
+    }
+
+    bool GetHasKeyValue(const std::string& pKey)const
+    {
+        if( mRoot.mType == JTYPE_OBJECT )
+        {
+            const auto found = mRoot.mObject.find(pKey);
+            if( found != mRoot.mObject.end() )
+                return true;
+        }
+
+        return false;
     }
 
 private:

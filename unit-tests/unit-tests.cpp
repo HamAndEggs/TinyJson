@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <assert.h>
 
 #include "../TinyJson.h"
 
@@ -21,18 +22,23 @@ int main(int argc, char *argv[])
     std::cout << "Running test, simple json string\n";
     tinyjson::JsonProcessor test1(test1Json);
     std::cout << test1["Hello World"].mValue << '\n';
+    assert( test1.GetHasKeyValue("empty string test") );
 
 // Simple object tree
     const char* test2Json = R"({"Level1":{"Level2":{"Level3":"It worked!","Level3Number":12}}})";
-    std::cout << "Running test, simple object tree\n";
     tinyjson::JsonProcessor test2(test2Json);
     std::cout << test2["Level1"]["Level2"]["Level3"].GetString() << '\n';
     std::cout << test2["Level1"]["Level2"]["Level3Number"].GetInt() << '\n';
+    std::cout << "Running test, simple object tree\n";
 
 
 // Now test a big weather json file.
     std::cout << "Running test, big complex json\n";
     tinyjson::JsonProcessor weatherData(weatherBigTestJson);
+    assert( weatherData.GetHasKeyValue("current") );
+    assert( weatherData["current"].GetHasKeyValue("weather") );
+    assert( weatherData["current"]["weather"].GetArraySize() > 0 );
+    assert( weatherData["current"]["weather"][0].GetHasKeyValue("main") );
     std::cout << weatherData["current"]["weather"][0]["main"].GetString() << '\n';
 
 // And quit";
