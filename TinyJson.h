@@ -33,16 +33,42 @@ namespace tinyjson{ // Using a namespace to try to prevent name clashes as my cl
  * @brief Different types of json value.
  * 
  */
+#define JSON_TYPES                    \
+    DEF_TYPE(JTYPE_STRING,"String")   \
+    DEF_TYPE(JTYPE_NUMBER,"Number")   \
+    DEF_TYPE(JTYPE_OBJECT,"Object")   \
+    DEF_TYPE(JTYPE_ARRAY,"Array")     \
+    DEF_TYPE(JTYPE_BOOLEAN,"Boolean") \
+    DEF_TYPE(JTYPE_NULL,"NULL")
+    
 enum JsonValueType
 {
-	JTYPE_STRING,
-	JTYPE_NUMBER,
-	JTYPE_OBJECT,
-	JTYPE_ARRAY,
-	JTYPE_TRUE,
-	JTYPE_FALSE,
-	JTYPE_NULL
+    JTYPE_INVALID,
+#define DEF_TYPE(JSON_ENUM__,JSON_NAME__) JSON_ENUM__,
+    JSON_TYPES
+#undef DEF_TYPE
 };
+
+/**
+ * @brief Fetches the string human readable name for a just type.
+ * 
+ * @param pType 
+ * @return std::string 
+ */
+inline std::string JsonValueTypeToString(JsonValueType pType)
+{
+    switch(pType)
+    {
+#define DEF_TYPE(JSON_ENUM__,JSON_NAME__) case JSON_ENUM__:return JSON_NAME__;
+    JSON_TYPES
+#undef DEF_TYPE
+    case JTYPE_INVALID:
+        throw std::runtime_error("JsonValueTypeToString passed an uninitialized type value");    
+        break;
+    };
+    throw std::runtime_error("JsonValueTypeToString passed an unknown type value");    
+    return "unknown json type";
+}
 
 /**
  * @brief This represents the core data structure that drives Json.
@@ -50,8 +76,17 @@ enum JsonValueType
  */
 struct JsonValue
 {
+    JsonValue():mType(JTYPE_INVALID),mBoolean(false)
+    {}
 	JsonValueType mType;
-	
+
+    /**
+     * @brief This holds the true or false value if the json value is TRUE or FALSE
+     * The json spec defines types, one for false and one for true. That is daft.
+     * So I define a boolean type and set my type to JTYPE_BOOLEAN and store the value.
+     */
+    bool mBoolean;
+
 	/**
 	 * @brief I hold all number values as a string, this is because until the user asks I do not know what type they want it as.
 	 * I also put the strings in here.
@@ -77,19 +112,32 @@ struct JsonValue
      */
     const JsonValue& operator [](const std::string& pKey)const
     {
-        assert( mType == JTYPE_OBJECT );
+        AssertType(JTYPE_OBJECT);
         const auto found = mObject.find(pKey);
         if( found != mObject.end() )
             return found->second;
         throw std::runtime_error("Json value for key " + pKey + " not found");
     }
 
+    /**
+     * @brief All0ws you to access the array type with an index and not have to add a ".Array"
+     * This means MyJson["songs"][10]["name"].GetString() is possible.
+     * @param pIndex 
+     * @return const JsonValue& 
+     */
     const JsonValue& operator [](size_t pIndex)const
     {
-        assert( mType == JTYPE_ARRAY );
+        AssertType(JTYPE_ARRAY);
         return mArray[pIndex];
     }
 
+    /**
+     * @brief Checks that the key passed in exists without throwing an exception.
+     * If you do MyJson["scores"][10].GetInt() and "scores" was not in the root the code will throw an exception.
+     * @param pKey 
+     * @return true 
+     * @return false 
+     */
     bool GetHasKeyValue(const std::string& pKey)const
     {
         if( mType == JTYPE_OBJECT )
@@ -102,6 +150,11 @@ struct JsonValue
         return false;
     }
 
+    /**
+     * @brief Fetches the size of the array, if the type is an array, else zero.
+     * 
+     * @return size_t 
+     */
     size_t GetArraySize()const
     {
         if( mType == JTYPE_ARRAY )
@@ -109,62 +162,122 @@ struct JsonValue
         return 0;
     }
 
+    /**
+     * @brief Gets the value as a string, if it is a string type.
+     * Else throws an exception.
+     * @return const std::string& 
+     */
     const std::string& GetString()const
     {
-        assert( mType == JTYPE_STRING );
+        AssertType(JTYPE_STRING);
         return mValue;
     }
 
+    /**
+     * @brief Gets the value as a double, if it is a number type.
+     * Else throws an exception.
+     * @return double 
+     */
     double GetDouble()const
     {
-        assert( mType == JTYPE_NUMBER );
+        AssertType(JTYPE_NUMBER);
         return std::stod(mValue);
     }
 
+    /**
+     * @brief Gets the value as a float, if it is a number type.
+     * Else throws an exception.
+     * @return float 
+     */
     float GetFloat()const
     {
-        assert( mType == JTYPE_NUMBER );
+        AssertType(JTYPE_NUMBER);
         return std::stof(mValue);
     }
 
+    /**
+     * @brief Gets the value as an int, if it is a number type.
+     * Else throws an exception.
+     * @return int 
+     */
     int GetInt()const
     {
         return GetSigned32Int();
     }
 
+    /**
+     * @brief Gets the value as an uint64_t, if it is a number type.
+     * Else throws an exception.
+     * @return uint64_t 
+     */
     uint64_t GetUnsigned64Int()const
     {
-        assert( mType == JTYPE_NUMBER );
+        AssertType(JTYPE_NUMBER);
         return std::stoull(mValue);
     }
 
+    /**
+     * @brief Gets the value as an uint32_t, if it is a number type.
+     * Else throws an exception.
+     * @return uint32_t 
+     */
     uint32_t GetUnsigned32Int()const
     {
-        assert( mType == JTYPE_NUMBER );
+        AssertType(JTYPE_NUMBER);
         return std::stoul(mValue);
     }
 
+    /**
+     * @brief Gets the value as an int64_t, if it is a number type.
+     * Else throws an exception.
+     * @return int64_t 
+     */
     int64_t GetSigned64Int()const
     {
-        assert( mType == JTYPE_NUMBER );
+        AssertType(JTYPE_NUMBER);
         return std::stoll(mValue);
     }
 
+    /**
+     * @brief Gets the value as an int32_t, if it is a number type.
+     * Else throws an exception.
+     * @return int32_t 
+     */
     int32_t GetSigned32Int()const
     {
-        assert( mType == JTYPE_NUMBER );
+        AssertType(JTYPE_NUMBER);
         return std::stol(mValue);
     }
 
+    /**
+     * @brief Gets the value as an boolean, if it is a boolean type.
+     * Else throws an exception.
+     * @return bool 
+     */
     bool GetBoolean()const
     {
-        assert( mType == JTYPE_TRUE || mType == JTYPE_FALSE );
-        return mType == JTYPE_TRUE;
+        AssertType(JTYPE_BOOLEAN);
+        return mBoolean;
     }
 
+    /**
+     * @brief Returns true if the type is a NULL.
+     * 
+     * @return true 
+     * @return false 
+     */
     bool GetIsNull()const
     {// We don't assert here as the false is an ok answer.
         return mType == JTYPE_NULL;
+    }
+
+private:
+    void AssertType(JsonValueType pType)const
+    {
+        if( mType != pType )
+        {
+            throw std::runtime_error("Json Type is not what is expected, the type is " + JsonValueTypeToString(mType) +" looking for " + JsonValueTypeToString(pType));
+        }
     }
 
 };
@@ -217,6 +330,12 @@ public:
         throw std::runtime_error("Json value for key " + pKey + " not found in root object");
     }
 
+    /**
+     * @brief This is a handy overload that allows you to do ["key1"]["key2"]["key3"].GetInt() type of thing.
+     * throws std::runtime_error if key not found.
+     * @param pKey The key string that represents the value you want.
+     * @return const JsonValue& The value.
+     */
     bool GetHasKeyValue(const std::string& pKey)const
     {
         if( mRoot.mType == JTYPE_OBJECT )
@@ -316,13 +435,14 @@ private:
             break;
 
         case '[':
+//            pNewValue.mArray = std::make_shared<std::vector<JsonValue>>();
+            pNewValue.mType = JTYPE_ARRAY;
             do
             {
                 mJson++;//skip ']' or the ','
-                pNewValue.mType = JTYPE_ARRAY;
-                JsonValue arrayValue;
-                MakeValue(arrayValue);
-                pNewValue.mArray.emplace_back(arrayValue);
+                // Looks odd, but is the easiest / optimal way to reduce memory reallocations using c++14 features.
+                pNewValue.mArray.resize(pNewValue.mArray.size()+1);
+                MakeValue(pNewValue.mArray.back());
                 SkipWhiteSpace();
             }while(*mJson == ',');
 
@@ -344,7 +464,8 @@ private:
             if( tolower(mJson[1]) == 'u' && tolower(mJson[1]) == 'r' && tolower(mJson[1]) == 'e' )
             {
                 mJson += 4;
-                pNewValue.mType = JTYPE_TRUE;
+                pNewValue.mType = JTYPE_BOOLEAN;
+                pNewValue.mBoolean = true;
             }
             else
             {
@@ -357,7 +478,8 @@ private:
             if( tolower(mJson[1]) == 'a' && tolower(mJson[1]) == 'l' && tolower(mJson[1]) == 's' && tolower(mJson[1]) == 'e' )
             {
                 mJson += 5;
-                pNewValue.mType = JTYPE_FALSE;
+                pNewValue.mType = JTYPE_BOOLEAN;
+                pNewValue.mBoolean = false;
             }
             else
             {

@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     std::cout << "Running test, simple object tree\n";
 
 
-// Now test a big weather json file.
+// Now test a big weather json file./*
     std::cout << "Running test, big complex json\n";
     tinyjson::JsonProcessor weatherData(weatherBigTestJson);
     assert( weatherData.GetHasKeyValue("current") );
