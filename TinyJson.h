@@ -12,7 +12,11 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  
+   
+   Original code base is at https://github.com/HamAndEggs/TinyJson
+   
+   */
 
 #ifndef TINY_JSON_H
 #define TINY_JSON_H
@@ -138,7 +142,7 @@ struct JsonValue
      * @return true 
      * @return false 
      */
-    bool GetHasKeyValue(const std::string& pKey)const
+    bool HasValue(const std::string& pKey)const
     {
         if( mType == JTYPE_OBJECT )
         {
@@ -202,7 +206,7 @@ struct JsonValue
      */
     int GetInt()const
     {
-        return GetSigned32Int();
+        return GetInt32();
     }
 
     /**
@@ -210,7 +214,7 @@ struct JsonValue
      * Else throws an exception.
      * @return uint64_t 
      */
-    uint64_t GetUnsigned64Int()const
+    uint64_t GetUInt64()const
     {
         AssertType(JTYPE_NUMBER);
         return std::stoull(mValue);
@@ -221,7 +225,7 @@ struct JsonValue
      * Else throws an exception.
      * @return uint32_t 
      */
-    uint32_t GetUnsigned32Int()const
+    uint32_t GetUInt32()const
     {
         AssertType(JTYPE_NUMBER);
         return std::stoul(mValue);
@@ -232,7 +236,7 @@ struct JsonValue
      * Else throws an exception.
      * @return int64_t 
      */
-    int64_t GetSigned64Int()const
+    int64_t GetInt64()const
     {
         AssertType(JTYPE_NUMBER);
         return std::stoll(mValue);
@@ -243,7 +247,7 @@ struct JsonValue
      * Else throws an exception.
      * @return int32_t 
      */
-    int32_t GetSigned32Int()const
+    int32_t GetInt32()const
     {
         AssertType(JTYPE_NUMBER);
         return std::stol(mValue);
@@ -270,6 +274,41 @@ struct JsonValue
     {// We don't assert here as the false is an ok answer.
         return mType == JTYPE_NULL;
     }
+
+    /***************************************************
+     * Following set of functions are more robust and allow you to supply a default if the key is missing or the expected type is wrong.
+     * But beware uses these, although convenient, will hide errors in code. These are best used when you do not have control over the
+     * Json being read.
+     * If it's one of your files that you generate it is best to use the ones above as they will warn you about errors in the data.
+     * 
+     * @brief These functions will return the value found if the key is present and the value type is correct, else will return the default.
+     * @param pKey The Key of the value to look for.
+     * @param pDefault The default value to use if there was a problem.
+     * @return
+     * 
+     ***************************************************/
+    #define MAKE_SAFE_FUNCTION(FUNC_NAME__,FUNC_TYPE__,DEFAULT_VALUE__)                             \
+    FUNC_TYPE__ FUNC_NAME__(const std::string& pKey,FUNC_TYPE__ pDefault = DEFAULT_VALUE__)const    \
+    {                                                                                               \
+        try{return (*this)[pKey].FUNC_NAME__();}                                                    \
+        catch( const std::runtime_error& ){}/* Ignore exception and return the default.*/           \
+        return pDefault;                                                                            \
+    }
+
+    MAKE_SAFE_FUNCTION(GetArraySize,size_t,0);
+    MAKE_SAFE_FUNCTION(GetString,const std::string&,"");
+    MAKE_SAFE_FUNCTION(GetDouble,double,0.0);
+    MAKE_SAFE_FUNCTION(GetFloat,float,0.0f);
+    MAKE_SAFE_FUNCTION(GetInt,int,0);
+    MAKE_SAFE_FUNCTION(GetUInt64,uint64_t,0);
+    MAKE_SAFE_FUNCTION(GetUInt32,uint32_t,0);
+    MAKE_SAFE_FUNCTION(GetInt64,int64_t,0);
+    MAKE_SAFE_FUNCTION(GetInt32,int32_t,0);
+    MAKE_SAFE_FUNCTION(GetBoolean,bool,false);
+    MAKE_SAFE_FUNCTION(GetIsNull,bool,false);
+
+    #undef MAKE_SAFE_FUNCTION
+
 
 private:
     void AssertType(JsonValueType pType)const
@@ -317,35 +356,13 @@ public:
     }
 
     /**
-     * @brief This is a handy overload that allows you to do ["key1"]["key2"]["key3"].GetInt() type of thing.
-     * throws std::runtime_error if key not found.
-     * @param pKey The key string that represents the value you want.
-     * @return const JsonValue& The value.
+     * @brief Get the Root object
+     * 
+     * @return const JsonValue& 
      */
-    const JsonValue& operator [](const std::string& pKey)const
+    const JsonValue& GetRoot()const
     {
-        const auto found = mRoot.mObject.find(pKey);
-        if( found != mRoot.mObject.end() )
-            return found->second;
-        throw std::runtime_error("Json value for key " + pKey + " not found in root object");
-    }
-
-    /**
-     * @brief This is a handy overload that allows you to do ["key1"]["key2"]["key3"].GetInt() type of thing.
-     * throws std::runtime_error if key not found.
-     * @param pKey The key string that represents the value you want.
-     * @return const JsonValue& The value.
-     */
-    bool GetHasKeyValue(const std::string& pKey)const
-    {
-        if( mRoot.mType == JTYPE_OBJECT )
-        {
-            const auto found = mRoot.mObject.find(pKey);
-            if( found != mRoot.mObject.end() )
-                return true;
-        }
-
-        return false;
+        return mRoot;
     }
 
 private:

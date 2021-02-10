@@ -7,6 +7,90 @@
 
 extern const char* weatherBigTestJson;
 
+/**
+ * @brief simple test or parsing strings.
+ * 
+ * @return true 
+ * @return false 
+ */
+static bool UnitTest1()
+{
+    std::cout << "Running test, simple json string\n";
+
+    const char* jsonString = R"({"Hello World":"TheWorld","empty string test":""})";
+    tinyjson::JsonProcessor json(jsonString);
+    const tinyjson::JsonValue& root = json.GetRoot();
+
+    std::cout << root["Hello World"].mValue << '\n';
+    assert( root.HasValue("empty string test") );
+
+    // Test throwing of an exception when key not found or type is wrong.
+    try
+    {
+        std::cout << root["Hello World"].GetInt() << '\n';
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
+    try
+    {
+        std::cout << root["MyCash"].GetInt() << '\n';
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+    }
+
+    // Now do it again but test that the safe version of these functions do not throw an exception.
+    std::cout << root.GetDouble("Hello World",55.101f) << '\n';
+    std::cout << root.GetDouble("BigNumber") << '\n';
+
+    return true;    
+}
+
+/**
+ * @brief Simple object tree
+ * 
+ * @return true 
+ * @return false 
+ */
+static bool UnitTest2()
+{
+    std::cout << "Running test, simple object tree\n";
+    
+    const char* jsonString = R"({"Level1":{"Level2":{"Level3":"It worked!","Level3Number":12}}})";
+    tinyjson::JsonProcessor json(jsonString);
+    const tinyjson::JsonValue& root = json.GetRoot();
+
+    std::cout << root["Level1"]["Level2"]["Level3"].GetString() << '\n';
+    std::cout << root["Level1"]["Level2"]["Level3Number"].GetInt() << '\n';
+
+    return true;
+}
+
+/**
+ * @brief Now test a big weather json file
+ * 
+ * @return true 
+ * @return false 
+ */
+static bool UnitTest3()
+{
+    std::cout << "Running test, big complex json\n";
+    tinyjson::JsonProcessor json(weatherBigTestJson);
+    const tinyjson::JsonValue& weatherData = json.GetRoot();
+
+    assert( weatherData.HasValue("current") );
+    assert( weatherData["current"].HasValue("weather") );
+    assert( weatherData["current"]["weather"].GetArraySize() > 0 );
+    assert( weatherData["current"]["weather"][0].HasValue("main") );
+    std::cout << weatherData["current"]["weather"][0]["main"].GetString() << '\n';
+
+    return true;
+}
+
 int main(int argc, char *argv[])
 {
     std::cout << "Unit test app for TinyJson build by appbuild.\n";
@@ -17,29 +101,9 @@ int main(int argc, char *argv[])
     std::cout << "Build date " << APP_BUILD_DATE << '\n';
     std::cout << "Build time " << APP_BUILD_TIME << '\n';
 
-// simple test or parsing strings.
-    const char* test1Json = R"({"Hello World":"TheWorld","empty string test":""})";
-    std::cout << "Running test, simple json string\n";
-    tinyjson::JsonProcessor test1(test1Json);
-    std::cout << test1["Hello World"].mValue << '\n';
-    assert( test1.GetHasKeyValue("empty string test") );
-
-// Simple object tree
-    const char* test2Json = R"({"Level1":{"Level2":{"Level3":"It worked!","Level3Number":12}}})";
-    tinyjson::JsonProcessor test2(test2Json);
-    std::cout << test2["Level1"]["Level2"]["Level3"].GetString() << '\n';
-    std::cout << test2["Level1"]["Level2"]["Level3Number"].GetInt() << '\n';
-    std::cout << "Running test, simple object tree\n";
-
-
-// Now test a big weather json file./*
-    std::cout << "Running test, big complex json\n";
-    tinyjson::JsonProcessor weatherData(weatherBigTestJson);
-    assert( weatherData.GetHasKeyValue("current") );
-    assert( weatherData["current"].GetHasKeyValue("weather") );
-    assert( weatherData["current"]["weather"].GetArraySize() > 0 );
-    assert( weatherData["current"]["weather"][0].GetHasKeyValue("main") );
-    std::cout << weatherData["current"]["weather"][0]["main"].GetString() << '\n';
+    UnitTest1();
+    UnitTest2();
+    UnitTest3();
 
 // And quit";
     std::cout << "All tests passed!\n";
