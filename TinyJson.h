@@ -80,9 +80,8 @@ inline std::string JsonValueTypeToString(JsonValueType pType)
  */
 struct JsonValue
 {
-    JsonValue():mType(JTYPE_INVALID),mBoolean(false)
+    JsonValue():mBoolean(false),mType(JTYPE_INVALID)
     {}
-	JsonValueType mType;
 
     /**
      * @brief This holds the true or false value if the json value is TRUE or FALSE
@@ -136,6 +135,16 @@ struct JsonValue
     }
 
     /**
+     * @brief Set the Type of the value
+     * 
+     * @param pNewType 
+     */
+    void SetType(JsonValueType pNewType)
+    {
+        mType = pNewType;
+    }
+
+    /**
      * @brief Checks that the key passed in exists without throwing an exception.
      * If you do MyJson["scores"][10].GetInt() and "scores" was not in the root the code will throw an exception.
      * @param pKey 
@@ -153,6 +162,17 @@ struct JsonValue
 
         return false;
     }
+
+    /**
+     * @brief Get the Type of the jason value
+     * 
+     * @return JsonValueType 
+     */
+    JsonValueType GetType()const
+    {
+        return mType;
+    }
+
 
     /**
      * @brief Fetches the size of the array, if the type is an array, else zero.
@@ -306,11 +326,19 @@ struct JsonValue
     MAKE_SAFE_FUNCTION(GetInt32,int32_t,0);
     MAKE_SAFE_FUNCTION(GetBoolean,bool,false);
     MAKE_SAFE_FUNCTION(GetIsNull,bool,false);
-
+    MAKE_SAFE_FUNCTION(GetType,JsonValueType,JTYPE_INVALID);
+ 
     #undef MAKE_SAFE_FUNCTION
 
 
 private:
+	JsonValueType mType;
+
+    /**
+     * @brief Throws an exception if the type is not a match.
+     * 
+     * @param pType 
+     */
     void AssertType(JsonValueType pType)const
     {
         if( mType != pType )
@@ -342,7 +370,7 @@ public:
             throw std::runtime_error("Empty string passed into ParseJson");
         }
 
-        mRoot.mType = JTYPE_OBJECT;
+        mRoot.SetType(JTYPE_OBJECT);
         MakeObject(mRoot.mObject);// This function will leave json pointing to the next non white space.
 
         // Skip white space that maybe after it.
@@ -447,13 +475,12 @@ private:
             break;
 
         case '{':
-            pNewValue.mType = JTYPE_OBJECT;
+            pNewValue.SetType(JTYPE_OBJECT);
             MakeObject(pNewValue.mObject);
             break;
 
         case '[':
-//            pNewValue.mArray = std::make_shared<std::vector<JsonValue>>();
-            pNewValue.mType = JTYPE_ARRAY;
+            pNewValue.SetType(JTYPE_ARRAY);
             do
             {
                 mJson++;//skip ']' or the ','
@@ -472,7 +499,7 @@ private:
             break;
 
         case '\"':
-            pNewValue.mType = JTYPE_STRING;
+            pNewValue.SetType(JTYPE_STRING);
             pNewValue.mValue = ReadString();
             break;
 
@@ -481,7 +508,7 @@ private:
             if( tolower(mJson[1]) == 'u' && tolower(mJson[1]) == 'r' && tolower(mJson[1]) == 'e' )
             {
                 mJson += 4;
-                pNewValue.mType = JTYPE_BOOLEAN;
+                pNewValue.SetType(JTYPE_BOOLEAN);
                 pNewValue.mBoolean = true;
             }
             else
@@ -495,7 +522,7 @@ private:
             if( tolower(mJson[1]) == 'a' && tolower(mJson[1]) == 'l' && tolower(mJson[1]) == 's' && tolower(mJson[1]) == 'e' )
             {
                 mJson += 5;
-                pNewValue.mType = JTYPE_BOOLEAN;
+                pNewValue.SetType(JTYPE_BOOLEAN);
                 pNewValue.mBoolean = false;
             }
             else
@@ -509,7 +536,7 @@ private:
             if( tolower(mJson[1]) == 'u' && tolower(mJson[1]) == 'l' && tolower(mJson[1]) == 'l' )
             {
                 mJson += 4;
-                pNewValue.mType = JTYPE_NULL;
+                pNewValue.SetType(JTYPE_NULL);
             }
             else
             {
@@ -532,7 +559,7 @@ private:
             {
                 const char* valueStart = mJson;
                 FindEndOfNumber();
-                pNewValue.mType = JTYPE_NUMBER;
+                pNewValue.SetType(JTYPE_NUMBER);
                 pNewValue.mValue.assign(valueStart,mJson-valueStart);
             }
             break;
