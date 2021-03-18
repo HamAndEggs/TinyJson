@@ -5,8 +5,6 @@
 #include <fstream>
 
 #include <assert.h>
-
-#define TRACK_LINE_AND_COLUMN
 #include "../TinyJson.h"
 
 std::string LoadFileIntoString(const std::string& pFilename)
@@ -20,11 +18,15 @@ std::string LoadFileIntoString(const std::string& pFilename)
         return jsonStream.str();
     }
 
-    throw std::runtime_error("Jons file not found " + pFilename);
+    std::throw_with_nested(std::runtime_error("Jons file not found " + pFilename));
 
     return "";
 }
 
+/**
+ * @brief This will load a json file and then trap any error.
+ * This is so that we can test for files that should fail without stopping the test suite.
+ */
 static bool UnitTestFile(const std::string& pFilename, bool pShowError = true)
 {
     try
@@ -32,7 +34,7 @@ static bool UnitTestFile(const std::string& pFilename, bool pShowError = true)
         tinyjson::JsonProcessor json(LoadFileIntoString(pFilename));
         return true;
     }
-    catch( const std::runtime_error& why)
+    catch( const std::exception& why)
     {
         if( pShowError )
         {
@@ -255,7 +257,8 @@ static bool RunningUnitTestFiles()
     // Test the fail cases first.
     for(int n = 1 ; n < 34 ; n++ )
     {
-        if( UnitTestFile("tests/fail" + std::to_string(n) + ".json",false) )
+        const std::string fname = "tests/fail" + std::to_string(n) + ".json";
+        if( UnitTestFile(fname,false) )
         {
             std::runtime_error("A file that should have failed passed!");
         }
@@ -264,7 +267,8 @@ static bool RunningUnitTestFiles()
     // Test the pass cases first.
     for(int n = 1 ; n < 3 ; n++ )
     {
-        if( UnitTestFile("tests/fail" + std::to_string(n) + ".json",false) )
+        const std::string fname = "tests/pass" + std::to_string(n) + ".json";
+        if( UnitTestFile(fname,false) == false )
         {
             std::runtime_error("A file that should have passed failed!");
         }

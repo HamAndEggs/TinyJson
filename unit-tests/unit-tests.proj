@@ -2,5 +2,19 @@
     "source_files": [
         "unit-tests.cpp"
     ],
+   "configurations": {
+        "debug": {
+            "default": true,
+            "optimisation": "0",
+            "debug_level": "2",
+            "warnings_as_errors": false,
+            "enable_all_warnings": true,
+            "fatal_errors": true,
+            "define": [
+                "DEBUG_BUILD",
+                "TRACK_LINE_AND_COLUMN"
+            ]
+        }
+    },
     "version": "1.0.0"
 }
