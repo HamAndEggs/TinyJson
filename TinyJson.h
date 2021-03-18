@@ -101,7 +101,9 @@ struct JsonValue
 	/**
 	 * @brief I hold all number values as a string, this is because until the user asks I do not know what type they want it as.
 	 * I also put the strings in here.
-	 * I do not put objects or arrays as could take up a lot of space and also not needed.
+     * I am not using any memory fancy tricks. I prefer the code to be ledgable and maintainable.
+     * Also, it has been shown, some tricks that should work, like, polymorphic memory resources are slower.
+     * https://stackoverflow.com/questions/55028447/why-is-pmrstring-so-slow-in-these-benchmarks
 	 */
 	std::string mValue;
 
