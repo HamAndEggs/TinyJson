@@ -42,7 +42,6 @@ namespace tinyjson{ // Using a namespace to try to prevent name clashes as my cl
 
 /**
  * @brief Different types of json value.
- * 
  */
 #define JSON_TYPES                    \
     DEF_TYPE(JTYPE_STRING,"String")   \
