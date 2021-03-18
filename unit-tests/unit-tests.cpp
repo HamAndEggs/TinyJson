@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
         SimpleControlCharacterInStringTest,
         BigValidWeatherFileTest,
         RunningUnitTestFiles,
-        LargeComplexJsonFileTest// Work to do, currently fails :(
+        LargeComplexJsonFileTest
     };
 
     std::cout << "*****************************************************\n";
