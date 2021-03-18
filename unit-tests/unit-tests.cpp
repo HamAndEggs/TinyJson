@@ -44,6 +44,64 @@ static bool UnitTestFile(const std::string& pFilename, bool pShowError = true)
 }
 
 /**
+ * @brief test root types
+ */
+static bool TestRootTypes()
+{
+    std::cout << "*****************************************************\n";
+    std::cout << "Testing root types\n";
+
+    {
+        const char* jsonString = "{\"Hello World\":\"TheWorld\"}";
+        tinyjson::JsonProcessor json(jsonString);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root["Hello World"].mValue << '\n';
+    }
+
+    {
+        const char* jsonString = "\"String Root\"";
+
+        tinyjson::JsonProcessor json(jsonString);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root.mValue << '\n';
+    }
+
+    {
+        const char* jsonString = "122334";
+
+        tinyjson::JsonProcessor json(jsonString);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root.mValue << '\n';
+    }
+
+    {
+        const char* jsonString = "null";
+
+        tinyjson::JsonProcessor json(jsonString);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root.GetIsNull() << '\n';
+    }
+
+    {
+        const char* jsonString = "true";
+
+        tinyjson::JsonProcessor json(jsonString);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root.GetBoolean() << '\n';
+    }
+
+    {
+        const char* jsonString = "false";
+
+        tinyjson::JsonProcessor json(jsonString);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root.GetBoolean() << '\n';
+    }
+
+    return true;    
+}
+
+/**
  * @brief simple test or parsing strings.
  * 
  * @return true 
@@ -292,6 +350,7 @@ int main(int argc, char *argv[])
     std::cout << "Build time " << APP_BUILD_TIME << '\n';
 
     const std::vector<bool(*)()> tests = {
+        TestRootTypes,
         TestBasicTypesWork,
         TestThatIncorrectTypeRequestsWork,
         SimpleObjectTreeTest,
