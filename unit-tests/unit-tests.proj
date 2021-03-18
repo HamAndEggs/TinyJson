@@ -2,27 +2,5 @@
     "source_files": [
         "unit-tests.cpp"
     ],
-    "configurations": {
-        "debug": {
-            "standard": "c++14",
-            "optimisation": "0",
-            "debug_level": "2",
-            "warnings_as_errors": false,
-            "enable_all_warnings": true,
-            "fatal_errors": false,
-            "include": [
-                "/usr/include/",
-                "./"
-            ],
-            "libs": [
-                "m",
-                "stdc++",
-                "pthread"
-            ],
-            "define": [
-                "DEBUG_BUILD"
-            ]
-        }
-    },
-    "version": "0.0.1"
+    "version": "1.0.0"
 }

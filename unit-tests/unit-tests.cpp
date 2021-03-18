@@ -6,6 +6,7 @@
 
 #include <assert.h>
 
+#define TRACK_LINE_AND_COLUMN
 #include "../TinyJson.h"
 
 std::string LoadFileIntoString(const std::string& pFilename)
@@ -156,7 +157,27 @@ static bool SimpleObjectTreeTest()
                     "Level3":"It worked!",
                     "Level3Number":12
                 }
-            }
+            },
+            "array":
+            [
+                "test\\",
+                -3.3325685522591933E18,
+                {
+                    "Null In An Array in an array":
+                    [
+                        null,
+                        123456,
+                        null,
+                        null
+                    ]
+                },
+                {
+                    "!t,灝Y 1䗉罵?c饃호䉂Cᐭ쒘z(즽sZG㬣sഖE4뢜㓕䏞丮Qp簍6EZឪ겛fx'ꩱQ0罣i{k锩*㤴㯞r迎jTⲤ渔m炅肳":
+                    [
+                        null
+                    ]
+                }
+            ]
         }
     )";
     tinyjson::JsonProcessor json(jsonString);
@@ -277,7 +298,7 @@ int main(int argc, char *argv[])
         SimpleControlCharacterInStringTest,
         BigValidWeatherFileTest,
         RunningUnitTestFiles,
-//        LargeComplexJsonFileTest, Work to do, currently fails :(
+        LargeComplexJsonFileTest// Work to do, currently fails :(
     };
 
     std::cout << "*****************************************************\n";
