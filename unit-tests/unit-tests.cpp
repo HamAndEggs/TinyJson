@@ -249,6 +249,9 @@ static bool SimpleObjectTreeTest()
     return true;
 }
 
+/**
+ * @brief Tests against files that must pass and ones that must fail.
+ */
 static bool RunningUnitTestFiles()
 {
     std::cout << "*****************************************************\n";
@@ -333,14 +336,38 @@ static bool BigValidWeatherFileTest()
 /**
  * @brief This loads a valid but horrendous json file that should work.
  * Does not check the values read, need to look at a good way to test against rapid json.
- * 
- * @param pFilename 
  */
 static bool LargeComplexJsonFileTest()
 {
     std::cout << "*****************************************************\n";
     std::cout << "Running test, big complex uber size json file\n";
     return UnitTestFile("sample.json");
+}
+
+/**
+ * @brief Times the load of a file that has been used by others for bench marking. The file is over 2MB in size.
+ */
+static bool TimedTestedAgainstVeryLargeCanadaFile()
+{
+    std::cout << "*****************************************************\n";
+    std::cout << "Running test and bench mark on very large file\n";
+#ifdef RELEASE_BUILD
+    std::cout << "Release build, optimisation on\n";
+#else
+    std::cout << "Debug build, optimisation off\n";
+#endif
+
+	auto frameStart = std::chrono::system_clock::now();
+
+    tinyjson::JsonProcessor json(LoadFileIntoString("canada.json"));
+    std::cout << json.GetRoot()["type"].GetString() << "\n";
+
+    auto frameEnd = std::chrono::system_clock::now();
+    std::chrono::duration<float,std::milli> time = (frameEnd - frameStart);
+
+    std::cout << "Loading canada.json took: " << time.count() << " ms\n";
+
+    return true;
 }
 
 int main(int argc, char *argv[])
@@ -361,7 +388,8 @@ int main(int argc, char *argv[])
         SimpleControlCharacterInStringTest,
         BigValidWeatherFileTest,
         RunningUnitTestFiles,
-        LargeComplexJsonFileTest
+        LargeComplexJsonFileTest,
+        TimedTestedAgainstVeryLargeCanadaFile
     };
 
     std::cout << "*****************************************************\n";
