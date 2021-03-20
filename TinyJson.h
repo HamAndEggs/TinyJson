@@ -431,7 +431,8 @@ private:
         do
         {
             NextChar();// Skip object start char or comma for more key value pairs.
-            const std::string objKey = ReadString();
+            std::string objKey;
+            ReadString(objKey);
 
             // Now parse it's value.
             SkipWhiteSpace();
@@ -501,7 +502,7 @@ private:
 
         case '\"':
             pNewValue.SetType(JTYPE_STRING);
-            pNewValue.mValue = ReadString();
+            ReadString(pNewValue.mValue);
             break;
 
         case 'T':
@@ -586,7 +587,7 @@ private:
     /**
      * @brief Reads a string value.
      */
-    std::string ReadString()
+    void ReadString(std::string& rString)
     {
         // First find the start of the string
         SkipWhiteSpace();
@@ -614,10 +615,11 @@ private:
         NextChar(); // Skip "
         if( len > 0 )
         {
-            return std::string(stringStart,len);
+//            return std::string(stringStart,len);
+            rString.assign(stringStart,len);
         }
         // Empty string valid.
-        return "";
+//        return "";
     }
 
     /**

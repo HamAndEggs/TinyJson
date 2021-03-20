@@ -14,6 +14,17 @@
                 "DEBUG_BUILD",
                 "TRACK_LINE_AND_COLUMN"
             ]
+        },
+        "release": {
+            "default": true,
+            "optimisation": "3",
+            "debug_level": "0",
+            "warnings_as_errors": true,
+            "enable_all_warnings": true,
+            "fatal_errors": true,
+            "define": [
+                "RELEASE_BUILD"
+            ]
         }
     },
     "version": "1.0.0"
