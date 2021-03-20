@@ -7,6 +7,7 @@
             "default": true,
             "optimisation": "0",
             "debug_level": "2",
+            "standard": "c++17",
             "warnings_as_errors": false,
             "enable_all_warnings": true,
             "fatal_errors": true,
@@ -14,7 +15,20 @@
                 "DEBUG_BUILD",
                 "TRACK_LINE_AND_COLUMN"
             ]
+        },
+        "release": {
+            "default": false,
+            "optimisation": "3",
+            "debug_level": "0",
+            "standard": "c++17",
+            "warnings_as_errors": true,
+            "enable_all_warnings": true,
+            "fatal_errors": true,
+            "define": [
+                "RELEASE_BUILD"
+            ]
         }
+
     },
     "version": "1.0.0"
 }

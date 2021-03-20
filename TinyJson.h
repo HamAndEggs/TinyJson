@@ -105,12 +105,12 @@ struct JsonValue
      * Also, it has been shown, some tricks that should work, like, polymorphic memory resources are slower.
      * https://stackoverflow.com/questions/55028447/why-is-pmrstring-so-slow-in-these-benchmarks
 	 */
-	std::string mValue;
+	std::string_view mValue;
 
     /**
      * @brief A json object is a list of 1 or more key, value pairs.
      */
-    std::map<std::string,JsonValue> mObject;
+    std::map<const std::string_view,JsonValue> mObject;
 
     /**
      * @brief The storage for an array, which is just an array of json values.
@@ -123,13 +123,13 @@ struct JsonValue
      * @param pKey The key string that represents the value you want.
      * @return const JsonValue& The value.
      */
-    const JsonValue& operator [](const std::string& pKey)const
+    const JsonValue& operator [](const std::string_view& pKey)const
     {
         AssertType(JTYPE_OBJECT);
         const auto found = mObject.find(pKey);
         if( found != mObject.end() )
             return found->second;
-        throw std::runtime_error("Json value for key " + pKey + " not found");
+        throw std::runtime_error("Json value for key " + std::string(pKey) + " not found");
     }
 
     /**
@@ -192,7 +192,7 @@ struct JsonValue
     /**
      * @brief Gets the value as a string, if it is a string type. Else throws an exception.
      */
-    const std::string& GetString()const
+    const std::string_view& GetString()const
     {
         AssertType(JTYPE_STRING);
         return mValue;
@@ -204,7 +204,7 @@ struct JsonValue
     double GetDouble()const
     {
         AssertType(JTYPE_NUMBER);
-        return std::stod(mValue);
+        return std::stod(mValue.data());
     }
 
     /**
@@ -213,7 +213,7 @@ struct JsonValue
     float GetFloat()const
     {
         AssertType(JTYPE_NUMBER);
-        return std::stof(mValue);
+        return std::stof(mValue.data());
     }
 
     /**
@@ -230,7 +230,7 @@ struct JsonValue
     uint64_t GetUInt64()const
     {
         AssertType(JTYPE_NUMBER);
-        return std::stoull(mValue);
+        return std::stoull(mValue.data());
     }
 
     /**
@@ -239,7 +239,7 @@ struct JsonValue
     uint32_t GetUInt32()const
     {
         AssertType(JTYPE_NUMBER);
-        return std::stoul(mValue);
+        return std::stoul(mValue.data());
     }
 
     /**
@@ -248,7 +248,7 @@ struct JsonValue
     int64_t GetInt64()const
     {
         AssertType(JTYPE_NUMBER);
-        return std::stoll(mValue);
+        return std::stoll(mValue.data());
     }
 
     /**
@@ -257,7 +257,7 @@ struct JsonValue
     int32_t GetInt32()const
     {
         AssertType(JTYPE_NUMBER);
-        return std::stol(mValue);
+        return std::stol(mValue.data());
     }
 
     /**
@@ -290,7 +290,7 @@ struct JsonValue
      * 
      ***************************************************/
 #define MAKE_SAFE_FUNCTION(FUNC_NAME__,FUNC_TYPE__,DEFAULT_VALUE__)                                 \
-    FUNC_TYPE__ FUNC_NAME__(const std::string& pKey,FUNC_TYPE__ pDefault = DEFAULT_VALUE__)const    \
+    FUNC_TYPE__ FUNC_NAME__(const std::string_view& pKey,FUNC_TYPE__ pDefault = DEFAULT_VALUE__)const    \
     {                                                                                               \
         try{return (*this)[pKey].FUNC_NAME__();}                                                    \
         catch(...){}/* Ignore exception and return the default.*/                                   \
@@ -298,7 +298,7 @@ struct JsonValue
     }
 
     MAKE_SAFE_FUNCTION(GetArraySize,size_t,0);
-    MAKE_SAFE_FUNCTION(GetString,const std::string&,"");
+    MAKE_SAFE_FUNCTION(GetString,const std::string_view&,"");
     MAKE_SAFE_FUNCTION(GetDouble,double,0.0);
     MAKE_SAFE_FUNCTION(GetFloat,float,0.0f);
     MAKE_SAFE_FUNCTION(GetInt,int,0);
@@ -338,9 +338,10 @@ public:
      * throws std::runtime_error if the json is not constructed correctly.
      */
 	JsonProcessor(const std::string& pJsonString) :
-        mStart(pJsonString.c_str()),
-        mJsonEnd(pJsonString.c_str() + pJsonString.size() + 1),
-        mPos(pJsonString.c_str())
+        mData(pJsonString),
+        mPos(mData.data()),
+        mStart(mData.c_str()),
+        mJsonEnd(mData.c_str() + mData.size() + 1)
     {
 #ifdef TRACK_LINE_AND_COLUMN
         mRow = mColumn = 1;
@@ -369,9 +370,10 @@ public:
     }
 
 private:
+    std::string mData;  
+    char* mPos;  //!< The current position in the data that we are at.
     const char* const mStart; //!< The start of the data, used to help make errors more discoverable.
     const char* const mJsonEnd; //!< Used to detect when we're at the end of the data.
-    const char* mPos;  //!< The current position in the data that we are at.  
     JsonValue mRoot; //!< When all is done, this contains the json as usable c++ objects.
 
 /**
@@ -423,7 +425,7 @@ private:
      * Constructed in this way to reduce copy by value which is what you would get by returning the completed object. That would be horrendous.
      * @param rObject The json object that is to be built.
      */
-    void MakeObject(std::map<std::string,JsonValue>& rObject)
+    void MakeObject(std::map<const std::string_view,JsonValue>& rObject)
     {
         // Search for the start of the object.
         SkipWhiteSpace();
@@ -431,11 +433,12 @@ private:
         do
         {
             NextChar();// Skip object start char or comma for more key value pairs.
-            const std::string objKey = ReadString();
+            const std::string_view objKey = ReadString();
 
             // Now parse it's value.
             SkipWhiteSpace();
             AssertCorrectChar(':',"Json format error detected, seperator character ':'");
+            *mPos = 0;
             NextChar();
 
             MakeValue(rObject[objKey]);
@@ -447,7 +450,7 @@ private:
             SkipWhiteSpace();
             if( *mPos != '}' && *mPos != ',' )
             {
-                throw std::runtime_error(GetErrorPos() + "Json format error detected, did you forget a comma between key value pairs? For key " + objKey);
+                throw std::runtime_error(GetErrorPos() + "Json format error detected, did you forget a comma between key value pairs? For key " + objKey.data());
             }
         }while (*mPos == ',');
 
@@ -484,6 +487,7 @@ private:
             pNewValue.SetType(JTYPE_ARRAY);
             do
             {
+                *mPos = 0;
                 NextChar();//skip ']' or the ','
                 // Looks odd, but is the easiest / optimal way to reduce memory reallocations using c++14 features.
                 pNewValue.mArray.resize(pNewValue.mArray.size()+1);
@@ -561,7 +565,7 @@ private:
                 const char* valueStart = mPos;
                 FindEndOfNumber();
                 pNewValue.SetType(JTYPE_NUMBER);
-                pNewValue.mValue.assign(valueStart,mPos-valueStart);
+                pNewValue.mValue = std::string_view(valueStart,mPos-valueStart);
             }
             break;
 
@@ -586,7 +590,7 @@ private:
     /**
      * @brief Reads a string value.
      */
-    std::string ReadString()
+    std::string_view ReadString()
     {
         // First find the start of the string
         SkipWhiteSpace();
@@ -597,7 +601,7 @@ private:
         while( *mPos != '\"' )
         {
             // Did we hit the end?
-            AssertMoreData("Abrupt end to json whilst reading string");
+//            AssertMoreData("Abrupt end to json whilst reading string");
             // Special case, if we find a \ and then a special character code.
             if( mPos[0] == '\\' )
             {
@@ -614,10 +618,10 @@ private:
         NextChar(); // Skip "
         if( len > 0 )
         {
-            return std::string(stringStart,len);
+            return std::string_view(stringStart,len);
         }
         // Empty string valid.
-        return "";
+        return std::string_view();
     }
 
     /**
