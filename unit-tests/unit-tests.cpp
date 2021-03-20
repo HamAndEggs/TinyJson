@@ -351,6 +351,7 @@ static bool TimedTestedAgainstVeryLargeCanadaFile()
 {
     std::cout << "*****************************************************\n";
     std::cout << "Running test and bench mark on very large file\n";
+    std::cout << "Valgrind slows this down from 60ms to 2100ms so check which you'll looking at before passing judgment :)\n";
 #ifdef RELEASE_BUILD
     std::cout << "Release build, optimisation on\n";
 #else
