@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <assert.h>
+#include <cstring>
 
 namespace tinyjson{ // Using a namespace to try to prevent name clashes as my class names are kind of obvious :)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,6 +84,19 @@ inline std::string JsonValueTypeToString(JsonValueType pType)
 }
 
 /**
+ * @brief Used for std::map const char*
+ */
+struct JsonValueStrCmp
+{
+    bool operator()(char const *a, char const *b) const
+    {
+        return std::strcmp(a, b) < 0;
+    }
+};
+
+typedef std::map<const char*,struct JsonValue,JsonValueStrCmp> JsonValueMap;
+
+/**
  * @brief This represents the core data structure that drives Json.
  * It forms the second part of 1 or more the key value pair that represents a Json object.
  */
@@ -105,12 +119,12 @@ struct JsonValue
      * Also, it has been shown, some tricks that should work, like, polymorphic memory resources are slower.
      * https://stackoverflow.com/questions/55028447/why-is-pmrstring-so-slow-in-these-benchmarks
 	 */
-	std::string mValue;
+	const char* mValue;
 
     /**
      * @brief A json object is a list of 1 or more key, value pairs.
      */
-    std::map<std::string,JsonValue> mObject;
+    JsonValueMap mObject;
 
     /**
      * @brief The storage for an array, which is just an array of json values.
@@ -126,7 +140,7 @@ struct JsonValue
     const JsonValue& operator [](const std::string& pKey)const
     {
         AssertType(JTYPE_OBJECT);
-        const auto found = mObject.find(pKey);
+        const auto found = mObject.find(pKey.c_str());
         if( found != mObject.end() )
             return found->second;
         throw std::runtime_error("Json value for key " + pKey + " not found");
@@ -162,7 +176,7 @@ struct JsonValue
     {
         if( mType == JTYPE_OBJECT )
         {
-            const auto found = mObject.find(pKey);
+            const auto found = mObject.find(pKey.c_str());
             if( found != mObject.end() )
                 return true;
         }
@@ -192,7 +206,7 @@ struct JsonValue
     /**
      * @brief Gets the value as a string, if it is a string type. Else throws an exception.
      */
-    const std::string& GetString()const
+    const std::string GetString()const
     {
         AssertType(JTYPE_STRING);
         return mValue;
@@ -298,7 +312,7 @@ struct JsonValue
     }
 
     MAKE_SAFE_FUNCTION(GetArraySize,size_t,0);
-    MAKE_SAFE_FUNCTION(GetString,const std::string&,"");
+    MAKE_SAFE_FUNCTION(GetString,const std::string,"");
     MAKE_SAFE_FUNCTION(GetDouble,double,0.0);
     MAKE_SAFE_FUNCTION(GetFloat,float,0.0f);
     MAKE_SAFE_FUNCTION(GetInt,int,0);
@@ -337,18 +351,24 @@ public:
      * @brief Construct a new Json Processor object and parse the json data.
      * throws std::runtime_error if the json is not constructed correctly.
      */
-	JsonProcessor(const std::string& pJsonString) :
-        mStart(pJsonString.c_str()),
-        mJsonEnd(pJsonString.c_str() + pJsonString.size() + 1),
-        mPos(pJsonString.c_str())
+	JsonProcessor(const std::string& pJsonString)
     {
 #ifdef TRACK_LINE_AND_COLUMN
         mRow = mColumn = 1;
 #endif
-        if( pJsonString.size() < 2 )
+        const size_t size = pJsonString.size();
+
+        if( size < 2 )
         {
             throw std::runtime_error("Empty string passed into ParseJson");
         }
+
+
+        mStart = new char[size+1];
+        memcpy(mStart,pJsonString.data(),size);
+        mStart[size] = 0;
+        mJsonEnd = mStart + size + 1;
+        mPos = mStart;
 
         SkipWhiteSpace();
             MakeValue(mRoot); // Now lets get going. :D
@@ -360,6 +380,11 @@ public:
         }
     }
 
+    ~JsonProcessor()
+    {
+        delete []mStart;
+    }
+
     /**
      * @brief Get the Root object
      */
@@ -369,9 +394,10 @@ public:
     }
 
 private:
-    const char* const mStart; //!< The start of the data, used to help make errors more discoverable.
-    const char* const mJsonEnd; //!< Used to detect when we're at the end of the data.
-    const char* mPos;  //!< The current position in the data that we are at.  
+    char* mPos;  //!< The current position in the data that we are at.  
+    char* mStart; //!< The start of the data, used to help make errors more discoverable.
+    const char* mJsonEnd; //!< Used to detect when we're at the end of the data.
+    const char* mEmptyString = "";
     JsonValue mRoot; //!< When all is done, this contains the json as usable c++ objects.
 
 /**
@@ -423,7 +449,7 @@ private:
      * Constructed in this way to reduce copy by value which is what you would get by returning the completed object. That would be horrendous.
      * @param rObject The json object that is to be built.
      */
-    void MakeObject(std::map<std::string,JsonValue>& rObject)
+    void MakeObject(JsonValueMap& rObject)
     {
         // Search for the start of the object.
         SkipWhiteSpace();
@@ -431,7 +457,7 @@ private:
         do
         {
             NextChar();// Skip object start char or comma for more key value pairs.
-            const std::string objKey = ReadString();
+            const char* objKey = ReadString();
 
             // Now parse it's value.
             SkipWhiteSpace();
@@ -561,7 +587,8 @@ private:
                 const char* valueStart = mPos;
                 FindEndOfNumber();
                 pNewValue.SetType(JTYPE_NUMBER);
-                pNewValue.mValue.assign(valueStart,mPos-valueStart);
+//                pNewValue.mValue.assign(valueStart,mPos-valueStart);
+                pNewValue.mValue = valueStart;
             }
             break;
 
@@ -586,13 +613,13 @@ private:
     /**
      * @brief Reads a string value.
      */
-    std::string ReadString()
+    const char* ReadString()
     {
         // First find the start of the string
         SkipWhiteSpace();
         AssertCorrectChar('\"',"Json format error detected, expected start of string, did you forget to put the string in quotes?");
         NextChar(); // Skip "
-        const char* stringStart = mPos;
+        char* stringStart = mPos;
         // Now scan till we hit the next "
         while( *mPos != '\"' )
         {
@@ -611,13 +638,14 @@ private:
             NextChar();
         }
         const size_t len = mPos - stringStart;
+        *mPos = 0;
         NextChar(); // Skip "
         if( len > 0 )
         {
-            return std::string(stringStart,len);
+            return stringStart;//std::string(stringStart,len);
         }
         // Empty string valid.
-        return "";
+        return mEmptyString;
     }
 
     /**
