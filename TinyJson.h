@@ -332,8 +332,10 @@ public:
     /**
      * @brief Construct a new Json Processor object and parse the json data.
      * throws std::runtime_error if the json is not constructed correctly.
+     * If pFailOnDuplicateKeys is true and two keys at the same level are found to have the same name then we'll throw an exception.
      */
-	JsonProcessor(const std::string& pJsonString) :
+	JsonProcessor(const std::string& pJsonString,bool pFailOnDuplicateKeys = false) :
+        mFailOnDuplicateKeys(pFailOnDuplicateKeys),
         mStart(pJsonString.c_str()),
         mJsonEnd(pJsonString.c_str() + pJsonString.size() + 1),
         mPos(pJsonString.c_str())
@@ -364,11 +366,12 @@ public:
     }
 
 private:
-    const char* const mStart; //!< The start of the data, used to help make errors more discoverable.
-    const char* const mJsonEnd; //!< Used to detect when we're at the end of the data.
-    const char* mPos;  //!< The current position in the data that we are at.  
-    JsonValue mRoot; //!< When all is done, this contains the json as usable c++ objects.
-    uint32_t mRow,mColumn;  //!< Keeps track of where we are in the file for error reporting to the user.
+    const bool mFailOnDuplicateKeys;    //!< If true and two keys at the same level are found to have the same name then we'll throw an exception.
+    const char* const mStart;           //!< The start of the data, used to help make errors more discoverable.
+    const char* const mJsonEnd;         //!< Used to detect when we're at the end of the data.
+    const char* mPos;                   //!< The current position in the data that we are at.  
+    JsonValue mRoot;                    //!< When all is done, this contains the json as usable c++ objects.
+    uint32_t mRow,mColumn;              //!< Keeps track of where we are in the file for error reporting to the user.
 
     /**
      * @brief This will advance to next char and deal with line and colum tracking as we go.
@@ -427,6 +430,14 @@ private:
             SkipWhiteSpace();
             AssertCorrectChar(':',"Json format error detected, seperator character ':'");
             NextChar();
+
+            if( mFailOnDuplicateKeys )
+            {
+                if( rObject.find(objKey) != rObject.end() )
+                {
+                    throw std::runtime_error(GetErrorPos() + "Json format error detected, two objects at the same level have the same key, " + objKey);
+                }
+            }
 
             MakeValue(rObject[objKey]);
 

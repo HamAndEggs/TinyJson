@@ -50,7 +50,6 @@ static bool UnitTestFile(const std::string& pFilename, bool pShowError = true)
  */
 static bool TestRootTypes()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Testing root types\n";
 
     {
@@ -111,7 +110,6 @@ static bool TestRootTypes()
  */
 static bool TestBasicTypesWork()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Testing basic types work\n";
 
     const char* jsonString =
@@ -152,7 +150,6 @@ static bool TestBasicTypesWork()
  */
 static bool TestThatIncorrectTypeRequestsWork()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Testing incorrect type requests work\n";
 
     const char* jsonString =
@@ -204,7 +201,6 @@ static bool TestThatIncorrectTypeRequestsWork()
  */
 static bool SimpleObjectTreeTest()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Running test, simple object tree\n";
     
     const char* jsonString =
@@ -254,7 +250,6 @@ static bool SimpleObjectTreeTest()
  */
 static bool RunningUnitTestFiles()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Running test files, some should fail, some should pass.\n";
 
     // Test the fail cases first.
@@ -289,7 +284,6 @@ static bool RunningUnitTestFiles()
  */
 static bool SimpleControlCharacterInStringTest()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Control character test, ";
     
     const char* jsonString =
@@ -318,7 +312,6 @@ static bool SimpleControlCharacterInStringTest()
  */
 static bool BigValidWeatherFileTest()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Running test, big weather json\n";
     
     tinyjson::JsonProcessor json(LoadFileIntoString("weather.json"));
@@ -339,7 +332,6 @@ static bool BigValidWeatherFileTest()
  */
 static bool LargeComplexJsonFileTest()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Running test, big complex uber size json file\n";
     return UnitTestFile("sample.json");
 }
@@ -349,7 +341,6 @@ static bool LargeComplexJsonFileTest()
  */
 static bool TimedTestedAgainstVeryLargeCanadaFile()
 {
-    std::cout << "*****************************************************\n";
     std::cout << "Running test and bench mark on very large file\n";
     std::cout << "Valgrind slows this down from 60ms to 2100ms so check which you'll looking at before passing judgment :)\n";
 #ifdef RELEASE_BUILD
@@ -367,6 +358,178 @@ static bool TimedTestedAgainstVeryLargeCanadaFile()
     std::chrono::duration<float,std::milli> time = (frameEnd - frameStart);
 
     std::cout << "Loading canada.json took: " << time.count() << " ms\n";
+
+    return true;
+}
+
+/**
+ * @brief Checks that if chosen, duplicate keys will be found.
+ */
+static bool TestForDuplicateKeyDiscovery()
+{
+    const char* Duplicate1 =
+    R"(
+        {
+            "Key1":"Fred",
+            "Key2":"Tom",
+            "Key1":"Tim",
+            "Key4":"Sam"
+        }
+    )";
+
+    const char* Good1 =
+    R"(
+        {
+            "Key1":"Fred",
+            "Key2":"Tom",
+            "Key3":"Tim",
+            "Key4":"Sam"
+        }
+    )";
+
+    const char* Duplicate2 =
+    R"(
+        {
+            "Key1":
+            {
+                "Name":"Fred",
+                "Age":50
+            },
+            "Key1":
+            {
+                "Name":"Fred",
+                "Age":50
+            }
+        }
+    )";
+
+    const char* Duplicate3 = // Only Key7 in object Key1 is in error.
+    R"(
+        {
+            "array2":[
+                "Key1",
+                {
+                    "Key7":12,
+                    "Key7":144
+                },
+                {
+                    "Key2":12
+                },
+                {
+                    "Key2":12
+                }
+            ]
+        }
+    )";
+
+    const char* Good2 =
+    R"(
+        {
+            "Key1":
+            {
+                "Name":"Fred",
+                "Age":50
+            },
+            "Key2":
+            {
+                "Name":"Fred",
+                "Age":50
+            }
+        }
+    )";
+
+    const char* Good3 = // Duplicate strings in an array are ok.
+    R"(
+        {
+            "Array1":
+            [
+                "Key1",
+                "Key1"
+            ]
+        }
+    )";
+
+    const char* Good4 = // no errors despite some duplicates in the array.
+    R"(
+        {
+            "array2":[
+                "Key1",
+                {
+                    "Key7":12,
+                    "Key9":144
+                },
+                {
+                    "Key2":12
+                },
+                {
+                    "Key2":12
+                }
+            ]
+        }
+    )";
+// First check the failures. pFailOnDuplicateKeys set to true.
+    const std::vector<const char*>duplicates =
+    {
+        Duplicate1,
+        Duplicate2,
+        Duplicate3
+    };
+
+    for( auto jsonString : duplicates )
+    {
+        bool ok = false;
+        try
+        {
+            tinyjson::JsonProcessor json(jsonString,true);
+            const tinyjson::JsonValue& root = json.GetRoot();
+            std::cout << root.mObject.begin()->first << '\n';
+            ok = true;
+        }
+        catch(const std::exception& e)
+        {
+            std::cerr << "Duplicate error trapped correctly, " << e.what() << '\n';
+        }
+
+        if( ok )
+        {
+            throw std::runtime_error("A duplicate that should have failed passed!");
+        }
+    }
+
+// First check the passes with pFailOnDuplicateKeys set to true. Should all pass.
+    const std::vector<const char*>nonDuplicates =
+    {
+        Good1,
+        Good2,
+        Good3,
+        Good4
+    };
+
+    for( auto jsonString : nonDuplicates )
+    {
+        tinyjson::JsonProcessor json(jsonString,true);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root.mObject.begin()->first << '\n';
+    }
+
+// Now check the good and duplicates pass with the option pFailOnDuplicateKeys set to false.
+    const std::vector<const char*>good =
+    {
+        Good1,
+        Good2,
+        Good3,
+        Good4,
+        Duplicate1,
+        Duplicate2,
+        Duplicate3
+    };
+
+    for( auto jsonString : duplicates )
+    {
+        tinyjson::JsonProcessor json(jsonString,false);
+        const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << root.mObject.begin()->first << '\n';
+    }
 
     return true;
 }
@@ -390,19 +553,21 @@ int main(int argc, char *argv[])
         BigValidWeatherFileTest,
         RunningUnitTestFiles,
         LargeComplexJsonFileTest,
-        TimedTestedAgainstVeryLargeCanadaFile
+        TimedTestedAgainstVeryLargeCanadaFile,
+        TestForDuplicateKeyDiscovery
     };
-
-    std::cout << "*****************************************************\n";
 
     for( auto& test : tests )
     {
+        std::cout << "*****************************************************\n";
+
         if( !test() )
         {
             std::cout << "Halting, a test failed!\n";
             return EXIT_FAILURE;
         }
     }
+    std::cout << "*****************************************************\n";
 
 // And quit";
     std::cout << "All tests passed!\n";
