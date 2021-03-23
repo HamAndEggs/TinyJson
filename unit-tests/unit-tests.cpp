@@ -57,6 +57,10 @@ static bool TestRootTypes()
         tinyjson::JsonProcessor json(jsonString);
         const tinyjson::JsonValue& root = json.GetRoot();
         std::cout << root["Hello World"].mValue << '\n';
+        if( root["Hello World"].mValue != "TheWorld" )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
     }
 
     {
@@ -65,6 +69,10 @@ static bool TestRootTypes()
         tinyjson::JsonProcessor json(jsonString);
         const tinyjson::JsonValue& root = json.GetRoot();
         std::cout << root.mValue << '\n';
+        if( root.mValue != "String Root" )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
     }
 
     {
@@ -73,6 +81,10 @@ static bool TestRootTypes()
         tinyjson::JsonProcessor json(jsonString);
         const tinyjson::JsonValue& root = json.GetRoot();
         std::cout << root.mValue << '\n';
+        if( root.mValue != "122334" )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
     }
 
     {
@@ -81,6 +93,10 @@ static bool TestRootTypes()
         tinyjson::JsonProcessor json(jsonString);
         const tinyjson::JsonValue& root = json.GetRoot();
         std::cout << root.GetIsNull() << '\n';
+        if( root.GetIsNull() == false )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
     }
 
     {
@@ -89,6 +105,10 @@ static bool TestRootTypes()
         tinyjson::JsonProcessor json(jsonString);
         const tinyjson::JsonValue& root = json.GetRoot();
         std::cout << root.GetBoolean() << '\n';
+        if( root.GetBoolean() != true )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
     }
 
     {
@@ -97,6 +117,10 @@ static bool TestRootTypes()
         tinyjson::JsonProcessor json(jsonString);
         const tinyjson::JsonValue& root = json.GetRoot();
         std::cout << root.GetBoolean() << '\n';
+        if( root.GetBoolean() != false )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
     }
 
     return true;    
@@ -130,23 +154,57 @@ static bool TestBasicTypesWork()
     const tinyjson::JsonValue& root = json.GetRoot();
 
     std::cout << root["Hello World"].mValue << '\n';
+    if( root["Hello World"].GetString() != "TheWorld" )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
     std::cout << "Empty String -> \"" << root["empty string test"].mValue << "\"\n";
+    if( root["empty string test"].GetString() != "" )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
     std::cout << JsonValueTypeToString(root["A Null"].GetType()) << '\n';
+    if( root["A Null"].GetIsNull() == false )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
     std::cout << JsonValueTypeToString(root["A True"].GetType()) << '\n';
+    if( root["A True"].GetBoolean() == false )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
     std::cout << JsonValueTypeToString(root["A False"].GetType()) << '\n';
+    if( root["A False"].GetBoolean() == true )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
     std::cout << root["Int"].GetInt() << '\n';
+    if( root["Int"].GetInt() != 123456 )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
     std::cout << root["Float"].GetFloat() << '\n';
+    if( root["Float"].GetFloat() != 3.14f )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
     std::cout << root["Exponent"].GetFloat() << '\n';
-
-
+    if( root["Exponent"].GetFloat() != -1.50139930144708198E18f )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
     return true;    
 }
 
 /**
  * @brief simple test or parsing strings.
- * 
- * @return true 
- * @return false 
  */
 static bool TestThatIncorrectTypeRequestsWork()
 {
