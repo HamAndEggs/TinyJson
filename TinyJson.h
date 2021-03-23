@@ -31,6 +31,7 @@
 
 namespace tinyjson{ // Using a namespace to try to prevent name clashes as my class names are kind of obvious :)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+#define TINYJSON_VERSION "1.0.0"
 
 /**
  * @brief Different types of json value.

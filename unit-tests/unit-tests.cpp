@@ -136,7 +136,7 @@ static bool TestBasicTypesWork()
 {
     std::cout << "Testing basic types work\n";
 
-    const char* jsonString =
+    const std::string jsonString =
     R"(
         {
             "Hello World":"TheWorld",
@@ -146,7 +146,14 @@ static bool TestBasicTypesWork()
             "A False": false,
             "Int": 123456,
             "Float" : 3.14,
-            "Exponent":-1.50139930144708198E18
+            "Exponent":-1.50139930144708198E18,
+            "Array":[
+                12,
+                "Happy Simon",
+                {
+                    "Weather":"Good"
+                }
+            ]
         }
     )";
 
@@ -200,7 +207,26 @@ static bool TestBasicTypesWork()
     {
         return false;// Whoops, expected value wrong. :/
     }
-    return true;    
+
+    std::cout << root["Array"][0].GetInt() << '\n';
+    if( root["Array"][0].GetInt() != 12 )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
+    std::cout << root["Array"][1].GetString() << '\n';
+    if( root["Array"][1].GetString() != "Happy Simon" )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
+    std::cout << root["Array"][2]["Weather"].GetString() << '\n';
+    if( root["Array"][2]["Weather"].GetString() != "Good" )
+    {
+        return false;// Whoops, expected value wrong. :/
+    }
+
+    return true;
 }
 
 /**
