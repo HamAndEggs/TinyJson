@@ -337,7 +337,6 @@ public:
      */
 	JsonProcessor(const std::string& pJsonString,bool pFailOnDuplicateKeys = false) :
         mFailOnDuplicateKeys(pFailOnDuplicateKeys),
-        mStart(pJsonString.c_str()),
         mJsonEnd(pJsonString.c_str() + pJsonString.size() + 1),
         mPos(pJsonString.c_str())
     {
@@ -366,7 +365,6 @@ public:
 
 private:
     const bool mFailOnDuplicateKeys;    //!< If true and two keys at the same level are found to have the same name then we'll throw an exception.
-    const char* const mStart;           //!< The start of the data, used to help make errors more discoverable.
     const char* const mJsonEnd;         //!< Used to detect when we're at the end of the data.
     const char* mPos;                   //!< The current position in the data that we are at.  
     JsonValue mRoot;                    //!< When all is done, this contains the json as usable c++ objects.
