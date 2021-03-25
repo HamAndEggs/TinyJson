@@ -75,7 +75,6 @@ inline std::string JsonValueTypeToString(JsonValueType pType)
  * @brief The key value pairs of a json object.
  */
 typedef std::map<std::string,struct JsonValue> JsonKeyValue;
-typedef std::vector<struct JsonValue> JsonArray;
 
 /**
  * @brief This represents the core data structure that drives Json.
@@ -111,7 +110,7 @@ struct JsonValue
     /**
      * @brief The storage for an array, which is just an array of json values.
      */
-	JsonArray mArray;
+	std::vector<struct JsonValue> mArray;
 
     /**
      * @brief This is a handy overload that allows you to do ["key1"]["key2"]["key3"].GetInt() type of thing.
