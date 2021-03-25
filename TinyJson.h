@@ -15,9 +15,7 @@
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  
    
    Original code base is at https://github.com/HamAndEggs/TinyJson
-   
-   */
-
+*/
 #ifndef TINY_JSON_H
 #define TINY_JSON_H
 
@@ -85,15 +83,16 @@ typedef std::vector<struct JsonValue> JsonArray;
  */
 struct JsonValue
 {
-    JsonValue():mBoolean(false),mType(JsonValueType::INVALID)
-    {}
+    JsonValue() = default;
 
     /**
      * @brief This holds the true or false value if the json value is TRUE or FALSE
      * The json spec defines types, one for false and one for true. That is daft.
      * So I define a boolean type and set my type to BOOLEAN and store the value.
      */
-    bool mBoolean;
+    bool mBoolean = false;
+
+	JsonValueType mType = JsonValueType::INVALID;   //<! The type of the json value.
 
 	/**
 	 * @brief I hold all number values as a string, this is because until the user asks I do not know what type they want it as.
@@ -142,16 +141,6 @@ struct JsonValue
     }
 
     /**
-     * @brief Set the Type of the value
-     * 
-     * @param pNewType 
-     */
-    void SetType(JsonValueType pNewType)
-    {
-        mType = pNewType;
-    }
-
-    /**
      * @brief Checks that the key passed in exists without throwing an exception.
      * If you do MyJson["scores"][10].GetInt() and "scores" was not in the root the code will throw an exception.
      */
@@ -174,7 +163,6 @@ struct JsonValue
     {
         return mType;
     }
-
 
     /**
      * @brief Fetches the size of the array, if the type is an array, else zero.
@@ -284,7 +272,6 @@ struct JsonValue
      * @param pKey The Key of the value to look for.
      * @param pDefault The default value to use if there was a problem.
      * @return The value if there or the default
-     * 
      ***************************************************/
 #define MAKE_SAFE_FUNCTION(FUNC_NAME__,FUNC_TYPE__,DEFAULT_VALUE__)                                 \
     FUNC_TYPE__ FUNC_NAME__(const std::string& pKey,FUNC_TYPE__ pDefault = DEFAULT_VALUE__)const    \
@@ -309,8 +296,6 @@ struct JsonValue
 #undef MAKE_SAFE_FUNCTION
 
 private:
-	JsonValueType mType;
-
     /**
      * @brief Throws an exception if the type is not a match.
      */
@@ -325,7 +310,6 @@ private:
 
 /**
  * @brief This is the work horse that builds our data structure that mirrors the json data.
- * 
  */
 class JsonProcessor
 {
@@ -374,8 +358,7 @@ private:
      * @brief This will advance to next char and deal with line and colum tracking as we go.
      * It was optional, with a version that just incremented mPos. Made little difference to speed when reading massive 2MB file.
      * So is on all the time now as makes code cleaning and the class easier to use.
-     * Remember, trust your compiler.
-     * NextChar will compile into a few instructions. This has been check in compiler explorer.  https://godbolt.org/
+     * Remember, trust your compiler. NextChar will compile into a few instructions. This has been check in compiler explorer.  https://godbolt.org/
      */
     inline void NextChar(){mPos++;if(*mPos == '\n'){mRow++;mColumn=1;}else{mColumn++;}}
 
@@ -443,8 +426,8 @@ private:
                 throw std::runtime_error(GetErrorPos() + "Json format error detected, did you forget a comma between key value pairs? For key " + objKey);
             }
         }while (*mPos == ',');
-    // Validate end of object.    
-        if( *mPos == '}' )
+
+        if( *mPos == '}' )    // Validate end of object.
         {
             NextChar();
         }
@@ -467,12 +450,12 @@ private:
             break;
 
         case '{':
-            pNewValue.SetType(JsonValueType::OBJECT);
+            pNewValue.mType = JsonValueType::OBJECT;
             MakeObject(pNewValue.mObject);
             break;
 
         case '[':
-            pNewValue.SetType(JsonValueType::ARRAY);
+            pNewValue.mType = JsonValueType::ARRAY;
             do
             {
                 NextChar();// skip '[' or the ','
@@ -495,7 +478,7 @@ private:
             break;
 
         case '\"':
-            pNewValue.SetType(JsonValueType::STRING);
+            pNewValue.mType = JsonValueType::STRING;
             ReadString(pNewValue.mValue);
             break;
 
@@ -504,7 +487,7 @@ private:
             if( tolower(mPos[1]) == 'r' && tolower(mPos[2]) == 'u' && tolower(mPos[3]) == 'e' )
             {
                 mPos += 4;
-                pNewValue.SetType(JsonValueType::BOOLEAN);
+                pNewValue.mType = JsonValueType::BOOLEAN;
                 pNewValue.mBoolean = true;
             }
             else
@@ -518,7 +501,7 @@ private:
             if( tolower(mPos[1]) == 'a' && tolower(mPos[2]) == 'l' && tolower(mPos[3]) == 's' && tolower(mPos[4]) == 'e' )
             {
                 mPos += 5;
-                pNewValue.SetType(JsonValueType::BOOLEAN);
+                pNewValue.mType = JsonValueType::BOOLEAN;
                 pNewValue.mBoolean = false;
             }
             else
@@ -532,7 +515,7 @@ private:
             if( tolower(mPos[1]) == 'u' && tolower(mPos[2]) == 'l' && tolower(mPos[3]) == 'l' )
             {
                 mPos += 4;
-                pNewValue.SetType(JsonValueType::NULL_VALUE);
+                pNewValue.mType = JsonValueType::NULL_VALUE;
             }
             else
             {
@@ -551,7 +534,7 @@ private:
         case '7':
         case '8':
         case '9':
-            pNewValue.SetType(JsonValueType::NUMBER);
+            pNewValue.mType = JsonValueType::NUMBER;
             ReadNumber(pNewValue.mValue);
             break;
 
@@ -602,9 +585,9 @@ private:
             }
             NextChar();
         }
-    // Did we read a string?
+   
         const size_t len = mPos - stringStart;
-        if( len > 0 )
+        if( len > 0 ) // Did we read a string?
         {
             rString.assign(stringStart,len);
         }
