@@ -356,6 +356,12 @@ static bool RunningUnitTestFiles()
         }
     }
 
+    // Test a file that in the past has caused issues.
+    if( UnitTestFile("tests/weather-file-that-has-caused-a-crash.json",false) == false )
+    {
+        std::runtime_error("A file that should have passed failed!");
+    }
+
     std::cout << " All good!\n";
     return true;
 }
