@@ -46,12 +46,54 @@ static bool UnitTestFile(const std::string& pFilename, bool pShowError = true)
 }
 
 /**
+ * @brief Some basic tests
+ */
+static bool TestBasicFormats()
+{
+    std::cout << "Testing basic json files\n";
+
+    try
+    {
+        {
+            // Checks empty array is ok.
+            const char* jsonString = "[{\"a test\":12},{},[],-41]";
+            tinyjson::JsonProcessor json(jsonString);
+        }
+
+        {
+            // Checks empty array is ok.
+            const char* jsonString = "{\"\":\"\"}";
+            tinyjson::JsonProcessor json(jsonString);
+        }
+
+        {
+            // Checks empty strins are ok.
+            const char* jsonString = "[{\"one\":\"two\"},[]]";
+            tinyjson::JsonProcessor json(jsonString);            
+        }
+
+        {
+            // Checks empty strins are ok.
+            const char* jsonString = "[1e1]";
+            tinyjson::JsonProcessor json(jsonString);            
+        }
+    }
+    catch( std::runtime_error &e )
+    {
+        std::cerr << "Testing basic json failed: " << e.what() << "\n";
+        return false;
+    }
+
+
+    return true;
+}
+
+/**
  * @brief test root types
  */
 static bool TestRootTypes()
 {
     std::cout << "Testing root types\n";
-
     {
         const char* jsonString = "{\"Hello World\":\"TheWorld\"}";
         tinyjson::JsonProcessor json(jsonString);
@@ -122,7 +164,6 @@ static bool TestRootTypes()
             return false;// Whoops, expected value wrong. :/
         }
     }
-
     return true;    
 }
 
@@ -136,94 +177,96 @@ static bool TestBasicTypesWork()
 {
     std::cout << "Testing basic types work\n";
 
-    const std::string jsonString =
-    R"(
+    {
+        const std::string jsonString =
+        R"(
+            {
+                "Hello World":"TheWorld",
+                "empty string test":"",
+                "A Null": null,
+                "A True": true,
+                "A False": false,
+                "Int": 123456,
+                "Float" : 3.14,
+                "Exponent":-1.50139930144708198E18,
+                "Array":[
+                    12,
+                    "Happy Simon",
+                    {
+                        "Weather":"Good"
+                    }
+                ]
+            }
+        )";
+
+        tinyjson::JsonProcessor json(jsonString);
+        const tinyjson::JsonValue& root = json.GetRoot();
+
+        std::cout << root["Hello World"].mValue << '\n';
+        if( root["Hello World"].GetString() != "TheWorld" )
         {
-            "Hello World":"TheWorld",
-            "empty string test":"",
-            "A Null": null,
-            "A True": true,
-            "A False": false,
-            "Int": 123456,
-            "Float" : 3.14,
-            "Exponent":-1.50139930144708198E18,
-            "Array":[
-                12,
-                "Happy Simon",
-                {
-                    "Weather":"Good"
-                }
-            ]
+            return false;// Whoops, expected value wrong. :/
         }
-    )";
 
-    tinyjson::JsonProcessor json(jsonString);
-    const tinyjson::JsonValue& root = json.GetRoot();
+        std::cout << "Empty String -> \"" << root["empty string test"].mValue << "\"\n";
+        if( root["empty string test"].GetString() != "" )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << root["Hello World"].mValue << '\n';
-    if( root["Hello World"].GetString() != "TheWorld" )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << JsonValueTypeToString(root["A Null"].GetType()) << '\n';
+        if( root["A Null"].GetIsNull() == false )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << "Empty String -> \"" << root["empty string test"].mValue << "\"\n";
-    if( root["empty string test"].GetString() != "" )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << JsonValueTypeToString(root["A True"].GetType()) << '\n';
+        if( root["A True"].GetBoolean() == false )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << JsonValueTypeToString(root["A Null"].GetType()) << '\n';
-    if( root["A Null"].GetIsNull() == false )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << JsonValueTypeToString(root["A False"].GetType()) << '\n';
+        if( root["A False"].GetBoolean() == true )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << JsonValueTypeToString(root["A True"].GetType()) << '\n';
-    if( root["A True"].GetBoolean() == false )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << root["Int"].GetInt() << '\n';
+        if( root["Int"].GetInt() != 123456 )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << JsonValueTypeToString(root["A False"].GetType()) << '\n';
-    if( root["A False"].GetBoolean() == true )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << root["Float"].GetFloat() << '\n';
+        if( root["Float"].GetFloat() != 3.14f )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << root["Int"].GetInt() << '\n';
-    if( root["Int"].GetInt() != 123456 )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << root["Exponent"].GetFloat() << '\n';
+        if( root["Exponent"].GetFloat() != -1.50139930144708198E18f )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << root["Float"].GetFloat() << '\n';
-    if( root["Float"].GetFloat() != 3.14f )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << root["Array"][0].GetInt() << '\n';
+        if( root["Array"][0].GetInt() != 12 )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << root["Exponent"].GetFloat() << '\n';
-    if( root["Exponent"].GetFloat() != -1.50139930144708198E18f )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
+        std::cout << root["Array"][1].GetString() << '\n';
+        if( root["Array"][1].GetString() != "Happy Simon" )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
 
-    std::cout << root["Array"][0].GetInt() << '\n';
-    if( root["Array"][0].GetInt() != 12 )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
-
-    std::cout << root["Array"][1].GetString() << '\n';
-    if( root["Array"][1].GetString() != "Happy Simon" )
-    {
-        return false;// Whoops, expected value wrong. :/
-    }
-
-    std::cout << root["Array"][2]["Weather"].GetString() << '\n';
-    if( root["Array"][2]["Weather"].GetString() != "Good" )
-    {
-        return false;// Whoops, expected value wrong. :/
+        std::cout << root["Array"][2]["Weather"].GetString() << '\n';
+        if( root["Array"][2]["Weather"].GetString() != "Good" )
+        {
+            return false;// Whoops, expected value wrong. :/
+        }
     }
 
     return true;
@@ -337,12 +380,13 @@ static bool RunningUnitTestFiles()
     std::cout << "Running test files, some should fail, some should pass.\n";
 
     // Test the fail cases first.
-    for(int n = 1 ; n < 34 ; n++ )
+    for(int n = 1 ; n < 32 ; n++ )
     {
         const std::string fname = "tests/fail" + std::to_string(n) + ".json";
-        if( UnitTestFile(fname,false) )
+        if( UnitTestFile(fname,true) )
         {
-            std::runtime_error("A file that should have failed passed!");
+            std::cout << "A file that should have failed passed! " << fname << "\n";
+            return false;
         }
     }
 
@@ -350,16 +394,18 @@ static bool RunningUnitTestFiles()
     for(int n = 1 ; n < 3 ; n++ )
     {
         const std::string fname = "tests/pass" + std::to_string(n) + ".json";
-        if( UnitTestFile(fname,false) == false )
+        if( UnitTestFile(fname,true) == false )
         {
-            std::runtime_error("A file that should have passed failed!");
+            std::cout << "A file that should have passed failed! " << fname << "\n";
+            return false;
         }
     }
 
     // Test a file that in the past has caused issues.
-    if( UnitTestFile("tests/weather-file-that-has-caused-a-crash.json",false) == false )
+    if( UnitTestFile("tests/weather-file-that-has-caused-a-crash.json",true) == false )
     {
-        std::runtime_error("A file that should have passed failed!");
+        std::cout << "A file that should have passed failed! tests/weather-file-that-has-caused-a-crash.json\n";
+        return false;
     }
 
     std::cout << " All good!\n";
@@ -635,6 +681,7 @@ int main(int argc, char *argv[])
     std::cout << "Build time " << APP_BUILD_TIME << '\n';
 
     const std::vector<bool(*)()> tests = {
+        TestBasicFormats,
         TestRootTypes,
         TestBasicTypesWork,
         TestThatIncorrectTypeRequestsWork,
