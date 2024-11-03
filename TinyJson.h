@@ -126,9 +126,11 @@ struct JsonValue
             return found->second;
         throw std::runtime_error("Json value for key " + pKey + " not found");
     }
+    const JsonValue& operator [](const char* pKey)const{assert(pKey);return (*this)[std::string(pKey)];}
+
 
     /**
-     * @brief All0ws you to access the array type with an index and not have to add a ".Array"
+     * @brief Allows you to access the array type with an index and not have to add a ".Array"
      * This means MyJson["songs"][10]["name"].GetString() is possible.
      * @param pIndex 
      * @return const JsonValue& 
@@ -138,8 +140,30 @@ struct JsonValue
         AssertType(JsonValueType::ARRAY);
         return mArray[pIndex];
     }
+    const JsonValue& operator [](int pIndex)const{AssertType(JsonValueType::ARRAY);return mArray[pIndex];}
 
     /**
+     * If the value is an object then you can use it in a for loop.
+     * E.G or(const auto &res : child.second)
+     */
+    const JsonKeyValue::const_iterator begin()const{AssertType(JsonValueType::OBJECT);return mObject.cbegin();}
+    const JsonKeyValue::iterator begin(){AssertType(JsonValueType::OBJECT);return mObject.begin();}
+
+    const JsonKeyValue::const_iterator end()const{AssertType(JsonValueType::OBJECT);return mObject.cend();}
+    const JsonKeyValue::iterator end(){AssertType(JsonValueType::OBJECT);return mObject.end();}
+
+    operator float()const{return GetFloat();} 
+    operator double()const{return GetDouble();} 
+
+    operator bool()const{return GetBoolean();} 
+    operator int32_t()const{return GetInt32();} 
+    operator uint32_t()const{return GetUInt32();} 
+    operator int64_t()const{return GetInt64();} 
+    operator uint64_t()const{return GetUInt64();} 
+    operator const std::string&()const{return GetString();} 
+    operator tinyjson::JsonValueType()const{return GetType();} 
+
+   /**
      * @brief Checks that the key passed in exists without throwing an exception.
      * If you do MyJson["scores"][10].GetInt() and "scores" was not in the root the code will throw an exception.
      */
