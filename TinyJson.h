@@ -370,6 +370,14 @@ public:
         return mRoot;
     }
 
+    /**
+     * Convenient way to access values in the root object.
+    */
+    const JsonValue& operator [](const std::string& pKey)const
+    {
+        return GetRoot()[pKey];
+    }
+
 private:
     const bool mFailOnDuplicateKeys;    //!< If true and two keys at the same level are found to have the same name then we'll throw an exception.
     const char* const mJsonEnd;         //!< Used to detect when we're at the end of the data.
