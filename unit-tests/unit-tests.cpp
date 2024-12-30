@@ -5,7 +5,7 @@
 #include <fstream>
 
 #include <assert.h>
-#include "../TinyJson.h"
+#include "TinyJson.h"
 
 std::string LoadFileIntoString(const std::string& pFilename)
 {
@@ -134,8 +134,8 @@ static bool TestRootTypes()
 
         tinyjson::JsonProcessor json(jsonString);
         const tinyjson::JsonValue& root = json.GetRoot();
-        std::cout << root.GetIsNull() << '\n';
-        if( root.GetIsNull() == false )
+        std::cout << root.IsNULL() << '\n';
+        if( root.IsNULL() == false )
         {
             return false;// Whoops, expected value wrong. :/
         }
@@ -215,7 +215,7 @@ static bool TestBasicTypesWork()
         }
 
         std::cout << JsonValueTypeToString(root["A Null"].GetType()) << '\n';
-        if( root["A Null"].GetIsNull() == false )
+        if( root["A Null"].IsNULL() == false )
         {
             return false;// Whoops, expected value wrong. :/
         }
@@ -433,7 +433,7 @@ static bool SimpleControlCharacterInStringTest()
     tinyjson::JsonProcessor json(jsonString);
     const tinyjson::JsonValue& root = json.GetRoot();
 
-    root.GetIsNull();
+    root.IsNULL();
 
     std::cout << "Pass\n";
 
